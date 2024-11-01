@@ -9,9 +9,10 @@ import Foundation
 
 class ProfileViewModel: ObservableObject {
     @Published var user: UserModel
-    
+    @Published var imageData: Data?
     init(user: UserModel) {
         self.user = user
+        dowloadPP()
     }
     // MARK: - изменение имени
     func changeName(id: String, newName: String) {
@@ -37,5 +38,19 @@ class ProfileViewModel: ObservableObject {
             try await FirestoreService.shared.changeUserPassword(id: id, newPassword: newPassword, confirmPassword: confirmPassword)
         }
     }
-    
+    //MARK: - метод загрузки аватарки в базу данных 
+    func uploadImage(data: Data) {
+        Task {
+            try await StorageService.shared.upload(data: data, for: user.id)
+        }
+    }
+    //MARK: - метод загрузки аватарки
+    func dowloadPP() {
+        Task {
+            let data = try await StorageService.shared.dowlodPP(byUserId: user.id)
+            DispatchQueue.main.async {
+                self.imageData = data
+            }
+        }
+    }
 }

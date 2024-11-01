@@ -6,9 +6,13 @@
 //
 
 import SwiftUI
+import PhotosUI
 
 struct ProfileView: View {
     @StateObject var vm: ProfileViewModel
+    @StateObject var homeVM: HomeViewModel
+    @State private var ppItem: PhotosPickerItem?
+    @State private var ppImage = Image(systemName: "circle.fill")
     var body: some View {
         NavigationStack {
             VStack(spacing: 10) {
@@ -58,18 +62,63 @@ struct ProfileView: View {
                 
                 Spacer()
             }
+            .tint(Color(light: .black, dark: .white))
             .frame(maxWidth: .infinity,maxHeight: .infinity)
             .navigationTitle(SideBarEnum.profile.rawValue)
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                PhotosPicker(selection: $ppItem, matching: .images) {
+                    ZStack {
+                        Circle()
+                            .frame(width: 42, height: 42)
+                            .foregroundStyle(.white)
+                        ppImage
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width: 40, height: 40)
+                            .tint(.gray)
+                            .clipShape(Circle())
+                        Image(systemName: "camera")
+                            .frame(width: 5, height: 5)
+                            .foregroundColor(.white)
+                            .opacity(0.5)
+                    }
+                }
+            }
             Spacer()
         }
         .background {
             LinearGradient(colors: [Color(light: .white, dark: .black), .orange], startPoint: .topLeading, endPoint: .bottomTrailing)
                 .ignoresSafeArea()
         }
+        //MARK: - Отслеживает фото для его отбражения при выборе
+        .onChange(of: vm.imageData) {
+            if let imageData = vm.imageData,
+               let uiImage = UIImage(data: imageData) {
+                self.ppImage = Image(uiImage: uiImage)
+                vm.imageData = imageData
+                homeVM.imageData = imageData
+                
+            }
+        }
+        //MARK: - Отслеживает фото для его отправки в базу
+        .onChange(of: ppItem) {
+            Task {
+                if let loadedImage = try? await
+                    ppItem?.loadTransferable(type: Data.self) {
+                    vm.imageData = loadedImage
+                    if let uiImage = UIImage(data: vm.imageData!) {
+                        let image = Image(uiImage: uiImage)
+                        self.ppImage = image
+                        vm.uploadImage(data: loadedImage)
+                        homeVM.imageData = loadedImage
+                    }
+                }
+            }
+        }
     }
 }
 
 #Preview {
-    ProfileView(vm: .init(user: .init(id: "", name: "jhjvhhjv", email: "", phone: "")))
+    ProfileView(vm: .init(user: .init(id: "", name: "jhjvhhjv", email: "", phone: "")), homeVM: .init(userId: ""))
 }

@@ -21,6 +21,7 @@ struct HomeView: View {
         GridItem(.flexible(),spacing: 0),
         GridItem(.flexible(),spacing: 0)
     ]
+    
     var body: some View {
         //MARK: - Адаптивное вью работает во всех оринтациях
         AdaptiveView { size, isLandscape in

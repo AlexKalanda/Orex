@@ -14,6 +14,8 @@ final class FirestoreService {
     private var users: CollectionReference { db.collection("users")}
     private var cars: CollectionReference { db.collection("cars")}
     
+    
+    
     // MARK: - сервисный метод создания пользователя в базе данных
     func createUser(id: String, email: String, name: String, phone: String) async throws {
         let user = UserModel(id: id, name: name, email: email, phone: phone )
@@ -62,14 +64,36 @@ final class FirestoreService {
             .setData(car.representation)
     }
     
+    // MARK: - метод получения забронированной техники
+    
+    func getBookedCars(_ id: String) async throws -> [Car] {
+        let documents = try await users
+            .document(id)
+            .collection("cars")
+            .getDocuments()
+            .documents
+        let cars = documents.compactMap { snap in
+            return Car(data: snap.data())
+        }
+        //
+        for car in cars {
+            if car.date > Date() {
+                car.status = .reservation
+            }
+            if car.date < Date() {
+                car.status = .completed
+            }
+            if car.date.isToday {
+                car.status = .inWork
+            }
+        }
+        return cars
+    }
+    
     // MARK: - добавление новой даты в массив дат объекта техники
     func addNewDate(carModelID: String, timestamps: Timestamp) async throws {
         try await cars.document(carModelID).updateData(["dates": FieldValue.arrayUnion([timestamps])])
     }
-    
-    
-    
-    
     //MARK: - сервисный метод смены имени пользователя
     func setUserName(id:String, name:String) async throws {
         try await users.document(id).setData(["name":name],merge:true)

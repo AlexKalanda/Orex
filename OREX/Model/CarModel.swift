@@ -30,6 +30,8 @@ class CarModel: Identifiable {
         self.free = free
         self.dates = dates
     }
+    
+    
     // MARK: - инициализатор для получения техники из базы данных
     init?(data: [String : Any]) {
         guard let id = data["id"] as? String,

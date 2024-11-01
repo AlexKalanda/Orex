@@ -10,7 +10,7 @@ import Foundation
 class ContentViewModel: ObservableObject {
     @Published var appState: AppState
     
-    init() {
+    init()  {
         if let user = AuthService.shared.currentUser {
             appState = .authorized(id: user.uid)
         } else {

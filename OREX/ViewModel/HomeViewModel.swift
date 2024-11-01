@@ -7,18 +7,21 @@
 
 import Foundation
 import FirebaseCore
+import SwiftUI
 
 class HomeViewModel: ObservableObject {
     let currentUserID: String
     @Published var authorized: Bool = true
-    var user: UserModel?
+    @Published var user: UserModel?
     @Published var cars: [CarModel] = []
-    // test
-    @Published var currentCar: CarModel = .init(type: .backhoeLoader, title: "", image: "", stateNumber: "", equipment: [], description: "", free: true, dates: [])
+    @Published var imageData = Data()
+    @Published var ava: Image?
     init(userId: String) {
         self.currentUserID = userId
         getUser()
         getCars()
+        dowloadPP()
+        dataInImage()
     }
     // MARK: - получение текущего пользователя из базы
     func getUser() {
@@ -77,6 +80,26 @@ class HomeViewModel: ObservableObject {
     // MARK: -  Метод фильтрафии техники под категории
     func filterCategoty(_ category : String) -> [CarModel] {
         return cars.filter { $0.type.rawValue == category }
+    }
+    
+    //MARK: - метод загрузки аватарки
+    func dowloadPP() {
+        Task {
+           let data = try await StorageService.shared.dowlodPP(byUserId: currentUserID)
+            DispatchQueue.main.async {
+                self.imageData = data
+                print("отработал \(data.debugDescription)")
+            }
+        }
+    }
+    //MARK: - метод преобразования Data в Image
+    func dataInImage() {
+        Task {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                self.ava = Image(uiImage: .init(data: self.imageData) ?? UIImage(systemName: "person.crop.circle")!)
+            }
+            
+        }
     }
 }
 
